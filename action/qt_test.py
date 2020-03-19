@@ -37,6 +37,7 @@ class Example(QWidget):
         # 保存 photos/csv 的路径
         self.path_photos_from_camera = "data/data_faces_from_camera/"
         self.path_csv_from_photos = "data/data_csvs_from_camera/"
+        self.path_data_students = 'data/data_students/'
 
         # 判断摄像头是否已经打开
         self.cameraIsOpen = False
@@ -53,12 +54,17 @@ class Example(QWidget):
         self.timer.timeout.connect(self.show_pic)
 
 
+    # 识别函数
     def distinguish(self):
 
         self.lbl.setEnabled(True)
         if not self.cameraIsOpen:
             self.vc = cv2.VideoCapture(0)
 
+        self.addNumber.setText("")
+        self.addSex.setText("")
+        self.addAge.setText("")
+        self.addName.setText("")
         self.showInfoBtn.setEnabled(False)
         self.register.setEnabled(False)
         self.reigsterInfoBtn.setEnabled(True)
@@ -127,6 +133,11 @@ class Example(QWidget):
         if not self.cameraIsOpen:
             self.vc = cv2.VideoCapture(0)
 
+        self.addNumber.setText("")
+        self.addSex.setText("")
+        self.addAge.setText("")
+        self.addName.setText("")
+
         self.reigsterInfoBtn.setEnabled(False)
         self.showInfoBtn.setEnabled(True)
         self.register.setEnabled(True)
@@ -139,15 +150,7 @@ class Example(QWidget):
 
 
     def showInfo(self):
-        # print(self.cameraIsOpen)
-        # self.lbl.setEnabled(True)
-        # if not self.cameraIsOpen:
-        #     self.vc = cv2.VideoCapture(0)
-        # self.timer.start(100)
-        # self.showInfoBtn.setEnabled(False)
-        # self.register.setEnabled(False)
-        # self.reigsterInfoBtn.setEnabled(True)
-        # self.cameraIsOpen = True
+
 
         # 读取某人所有的人脸图像的数据
         people = os.listdir(self.path_images_from_camera)
@@ -198,9 +201,6 @@ class Example(QWidget):
         print(students_names)
 
         # 检测到人脸
-        print("------------")
-        print(self.faces)
-        print("-----------")
         if len(self.faces) != 0:
             # 获取当前捕获到的图像的所有人脸的特征，存储到 features_cap_arr
             features_cap_arr = []
@@ -243,7 +243,6 @@ class Example(QWidget):
                 if min(e_distance_list) < 0.4:
                     # 在这里修改 person_1, person_2 ... 的名字
                     print(similar_person_num)
-                    # TODO 多人在线时应怎么判定
                     # name_namelist[k] = "Person "+str(int(similar_person_num)+1)
                     name_namelist[k] = students_names[similar_person_num]
                     print("May be  " + students_names[similar_person_num])
@@ -257,11 +256,27 @@ class Example(QWidget):
                                   tuple([d.right(), d.bottom()]), (0, 255, 255),
                                   2)
                 print('\n')
-             # 在人脸框下面写人脸名字
-            for i in range(len(self.faces)):
-                print(name_namelist)
-                cv2.putText(self.img, name_namelist[i], pos_namelist[i], font,
-                                0.8, (0, 255, 255), 1, cv2.LINE_AA)
+
+
+
+            if name_namelist[0] != "unknown":
+                print(name_namelist[0])
+                studentName = name_namelist[0]
+                # TODO 多人在屏内会卡死
+                with open(self.path_data_students + str(
+                        studentName) + ".txt") as f:
+                    studentInfo = f.readlines()
+                print(studentInfo)
+                self.addName.setText(studentInfo[0])
+                self.addNumber.setText(studentInfo[1])
+                self.addSex.setText(studentInfo[2])
+                self.addAge.setText(studentInfo[3])
+            else:
+                self.addName.setText("库中无此人，识别失败")
+                self.addNumber.setText("库中无此人，识别失败")
+                self.addSex.setText("库中无此人，识别失败")
+                self.addAge.setText("库中无此人，识别失败")
+
 
         self.heigt, self.width = cur_frame.shape[:2]
         self.pixmap = QImage(self.img.data, self.width, self.heigt,
@@ -370,6 +385,11 @@ class Example(QWidget):
                         d.left() - ww + jj]
             cv2.imwrite(self.current_face_dir + "/img_face_" + str(
                 name) + ".jpg", im_blank)
+            info = [name, number, sex, age]
+            print(info)
+            with open(self.path_data_students +"/" + str(name) +".txt", "w") as f:
+                for l in info:
+                    f.write(l+'\n')
 
         self.message = QLabel('注册成功', self)
         self.vbox.addWidget(self.message)
